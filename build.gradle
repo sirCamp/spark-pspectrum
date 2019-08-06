@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'scala'
+    id 'maven-publish'
+}
+
+group 'com.sircamp'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+
+    sparkVersion = '2.4.3'
+    log4jVersion = '1.2.17'
+    scalaBinaryVersion = '2.12'
+}
+
+configurations {
+    sparkCompile // Configuration for Spark: should be included in the local
+    // class path both at compilation and at runtime, but should
+    // be excluded from the fat jar
+    shadowCompile // Configuration for things that should be included in the shadow jar.
+}
+
+dependencies {
+
+    compile 'org.scala-lang:scala-library:2.11.12'
+    compile "log4j:log4j:${log4jVersion}"
+    compile "org.apache.spark:spark-core_${scalaBinaryVersion}:${sparkVersion}"
+    compile "org.apache.spark:spark-mllib_${scalaBinaryVersion}:${sparkVersion}"
+    testCompile "junit:junit:4.12"
+    testCompile "org.scalatest:scalatest_${scalaBinaryVersion}:3.0.0"
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Spark PSpectrum'
+                description = 'Characheter embedding with p-spectrum kernels in Spark'
+                url = 'https://github.com/sirCamp/spark-pspectrum'
+
+                licenses {
+                    license {
+                        name = 'The MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'sirCamp'
+                        name = 'Stefano Campese'
+                        email = 'sircampydevelop@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
