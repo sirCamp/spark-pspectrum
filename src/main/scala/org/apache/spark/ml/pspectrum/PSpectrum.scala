@@ -20,7 +20,7 @@ import org.apache.spark.util.collection.CompactBuffer
 
 import scala.collection.mutable
 
-private[feature] trait PSpectrumParams extends Params with HasInputCol with HasOutputCol {
+private[pspectrum] trait PSpectrumParams extends Params with HasInputCol with HasOutputCol {
   /**
    * The P spectrum degree
    * @group param
@@ -66,7 +66,7 @@ private[feature] trait PSpectrumParams extends Params with HasInputCol with HasO
   setDefault(p -> 3)
 }
 
-private[feature] object PSpectrum {
+private[pspectrum] object PSpectrum {
 
 
   def getSpectrumEmbedding(data: RDD[Row], p: Int): RDD[mutable.HashMap[Long, mutable.HashMap[String, Long]]] = data.map((row: Row) => {
@@ -130,7 +130,7 @@ private[feature] object PSpectrum {
 
 }
 
-class PSpectrum private[feature](override val uid: String) extends Estimator[PSpectrumModel]
+class PSpectrum private[pspectrum](override val uid: String) extends Estimator[PSpectrumModel]
   with PSpectrumParams with DefaultParamsWritable {
 
   def this() = this(Identifiable.randomUID("pSpectrum"))
@@ -178,7 +178,7 @@ class PSpectrum private[feature](override val uid: String) extends Estimator[PSp
 }
 
 
-class PSpectrumModel private[feature] (
+class PSpectrumModel private[pspectrum] (
                                         override val uid: String,
                                         val trainRddSpectrumEmbedding: RDD[mutable.HashMap[Long,mutable.HashMap[String, Long]]]
                                       ) extends Model[PSpectrumModel] with PSpectrumParams with MLWritable {
@@ -231,7 +231,7 @@ class PSpectrumModel private[feature] (
 }
 
 
-private[feature] object PSpectrumModel extends MLReadable[PSpectrumModel] {
+private[pspectrum] object PSpectrumModel extends MLReadable[PSpectrumModel] {
 
   override def read: MLReader[PSpectrumModel] = new PSpectrumModelReader
 

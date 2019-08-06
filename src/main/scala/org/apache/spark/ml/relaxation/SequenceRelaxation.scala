@@ -1,4 +1,4 @@
-package ml.relaxation
+package org.apache.spark.ml.relaxation
 
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.shared.{HasHandleInvalid, HasInputCol, HasOutputCol}
@@ -11,7 +11,7 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 import scala.collection.mutable
 
 
-private[feature] trait SequenceRelaxationParams extends Params with HasInputCol with HasOutputCol with HasHandleInvalid{
+private[relaxation] trait SequenceRelaxationParams extends Params with HasInputCol with HasOutputCol with HasHandleInvalid{
   /**
    * The P spectrum degree
    * @group param
@@ -123,10 +123,10 @@ class SequenceRelaxation (override val uid: String)
 
 object SequenceRelaxation extends DefaultParamsReadable[SequenceRelaxation] {
 
-  private[feature] val SKIP_INVALID: String = "skip"
-  private[feature] val ERROR_INVALID: String = "error"
-  private[feature] val KEEP_INVALID: String = "keep"
-  private[feature] val supportedHandleInvalids: Array[String] =
+  private[relaxation] val SKIP_INVALID: String = "skip"
+  private[relaxation] val ERROR_INVALID: String = "error"
+  private[relaxation] val KEEP_INVALID: String = "keep"
+  private[relaxation] val supportedHandleInvalids: Array[String] =
     Array(SKIP_INVALID, ERROR_INVALID, KEEP_INVALID)
 
 
