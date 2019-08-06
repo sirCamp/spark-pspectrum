@@ -24,7 +24,7 @@ private[relaxation] trait SequenceRelaxationParams extends Params with HasInputC
 
 
   val defaultCharacterEncoding = new mutable.HashMap[String, String]()
-  val upper_chars = Array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "YZ")
+  val upper_chars = Array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")
   val lower_chars = Array("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
   val number_chars = Array("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
   val symbol_chars = Array("!", "\"", "£", "$", "%", "&", "/", "(", ")", "=", "?", "^", "§", "<", ">", ".", ":", ",", ";", "-", "_", "+", "*", "[", "]", "#")
@@ -43,6 +43,8 @@ private[relaxation] trait SequenceRelaxationParams extends Params with HasInputC
   })
 
   setDefault(characterEncoding, defaultCharacterEncoding)
+
+  setDefault(handleInvalid, SequenceRelaxation.ERROR_INVALID)
 
 }
 
@@ -79,7 +81,7 @@ class SequenceRelaxation (override val uid: String)
         getHandleInvalid match {
           case SequenceRelaxation.ERROR_INVALID => {
             if(characterEncoding.contains(character.toString)) {
-              newDocument += characterEncoding.get(character.toString).toString
+              newDocument += characterEncoding.get(character.toString).get.toString
             }
             else {
               throw new IllegalArgumentException(s"An unmapped ${character} char has been faund!")
@@ -94,10 +96,10 @@ class SequenceRelaxation (override val uid: String)
       newDocument.toList.mkString("")
     }
 
-    dataset.withColumn($(inputCol), relaxSequence(dataset.col($(inputCol))).as($(outputCol), Metadata.empty))
+    val temporaryDataset = dataset.withColumn($(outputCol), relaxSequence(dataset.col($(inputCol))).as($(outputCol), Metadata.empty))
 
 
-    dataset.toDF
+    temporaryDataset.toDF
   }
 
   override def transformSchema(schema: StructType): StructType = {
@@ -114,7 +116,7 @@ class SequenceRelaxation (override val uid: String)
     if (schema.fieldNames.contains(outputColName)) {
       throw new IllegalArgumentException(s"Output column $outputColName already exists.")
     }
-    StructType(schema.fields :+ new StructField(outputColName, DataTypes.StringType, true))
+    StructType(schema.fields :+ new StructField(outputColName, DataTypes.StringType, nullable = false))
   }
 
   override def copy(extra: ParamMap): SequenceRelaxation = defaultCopy(extra)
