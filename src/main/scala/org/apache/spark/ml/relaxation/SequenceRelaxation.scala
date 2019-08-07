@@ -70,8 +70,6 @@ class SequenceRelaxation (override val uid: String)
 
   override def transform(dataset: Dataset[_]): DataFrame = {
 
-    val outputSchema = transformSchema(dataset.schema)
-
     val relaxSequence = udf { document: String =>
       val characterEncoding = getCharacterEncoding
 

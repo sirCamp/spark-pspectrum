@@ -1,5 +1,7 @@
 package org.apache.spark
 
+import java.nio.file.{Files, Paths}
+
 import org.apache.spark.ml.relaxation.SequenceRelaxation
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
@@ -182,6 +184,78 @@ class SequenceRelaxationSuite extends FunSuite with BeforeAndAfterAll with Match
     List("VCCCVCCCVCCCCCVCCCCCVCCCCC", "vcccvcccvcccccvcccccvccccc", "0000000000", "++++++++++++++++++++++++++", "VcvC0+") should contain theSameElementsAs transformedTestDataset.select("test_data_output").rdd.collect().map(row => {
       row.getString(0)
     }).toList
+  }
+
+
+  test("Save model"){
+
+    val sr: SequenceRelaxation = new SequenceRelaxation()
+
+    val javaFolder:String = Files.createTempDirectory("test").toAbsolutePath.toString
+    sr.write.save(javaFolder+"/"+sr.uid)
+
+    assert(true === Files.exists(Paths.get(javaFolder+"/"+sr.uid)))
+  }
+
+
+  test("Load model"){
+
+
+    val sr: SequenceRelaxation = new SequenceRelaxation()
+
+    val javaFolder:String = Files.createTempDirectory("test").toAbsolutePath.toString
+    sr.write.save(javaFolder+"/"+sr.uid)
+
+
+    val srLoaded = SequenceRelaxation.load(javaFolder+"/"+sr.uid)
+
+    assert(srLoaded !== null)
+  }
+
+
+
+
+
+  test("Load model  paramter correctness"){
+
+    val characterEncoding = new mutable.HashMap[String, String]()
+    val upper_consonant_chars = Array("B", "C", "D", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "X", "Y", "Z")
+    val lower_consonant_chars = Array("b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z")
+    val upper_vowel_chars = Array("A", "E", "I", "O", "U")
+    val lower_vowel_chars = Array("a", "e", "i", "o", "u")
+    val number_chars = Array("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+    val symbol_chars = Array("!", "\"", "£", "$", "%", "&", "/", "(", ")", "=", "?", "^", "§", "<", ">", ".", ":", ",", ";", "-", "_", "+", "*", "[", "]", "#")
+
+    upper_consonant_chars.foreach(char => {
+      characterEncoding.put(char, "C")
+    })
+    lower_consonant_chars.foreach(char => {
+      characterEncoding.put(char, "c")
+    })
+    upper_vowel_chars.foreach(char => {
+      characterEncoding.put(char, "V")
+    })
+    lower_vowel_chars.foreach(char => {
+      characterEncoding.put(char, "v")
+    })
+    number_chars.foreach(char => {
+      characterEncoding.put(char, "0")
+    })
+    symbol_chars.foreach(char => {
+      characterEncoding.put(char, "+")
+    })
+
+    val sr: SequenceRelaxation = new SequenceRelaxation().setCharacterEncoding(characterEncoding)
+
+    val javaFolder:String = Files.createTempDirectory("test").toAbsolutePath.toString
+    sr.write.save(javaFolder+"/"+sr.uid)
+
+
+    val srLoaded = SequenceRelaxation.load(javaFolder+"/"+sr.uid)
+
+    srLoaded.getCharacterEncoding should contain theSameElementsAs characterEncoding
+
+
   }
 
 }

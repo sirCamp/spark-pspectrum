@@ -1,6 +1,5 @@
 package org.apache.spark.ml.pspectrum
 
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
 import org.apache.spark.ml.attribute.NominalAttribute
@@ -10,13 +9,14 @@ import org.apache.spark.ml.param.{IntParam, ParamMap, ParamValidators, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.functions.monotonically_increasing_id
 import org.apache.spark.sql.types.{DataTypes, StringType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Dataset, Row, RowFactory}
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.VersionUtils.majorMinorVersion
 import org.apache.spark.util.collection.CompactBuffer
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.collection.mutable
 
@@ -228,10 +228,11 @@ class PSpectrumModel private[pspectrum] (
 
   override def write: PSpectrumModelWriter = new PSpectrumModelWriter(this)
 
+
 }
 
 
-private[pspectrum] object PSpectrumModel extends MLReadable[PSpectrumModel] {
+object PSpectrumModel extends MLReadable[PSpectrumModel] {
 
   override def read: MLReader[PSpectrumModel] = new PSpectrumModelReader
 
@@ -242,12 +243,25 @@ private[pspectrum] object PSpectrumModel extends MLReadable[PSpectrumModel] {
 
     override protected def saveImpl(path: String): Unit = {
       DefaultParamsWriter.saveMetadata(instance, path, sc)
-      val data = Data(instance.trainRddSpectrumEmbedding)
+
+      val serializedRDD = instance.trainRddSpectrumEmbedding.map(row => {
+
+        val newRow:mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
+        row.keySet.foreach(key => {
+
+          newRow.put(String.valueOf(key),row.get(key).get.toMap.toJson.toString() )
+
+        })
+        newRow.toMap.toJson.toString()
+
+      })
+
       val dataPath = new Path(path, "data").toString
-      sparkSession.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
+
+      sparkSession.createDataset(serializedRDD)(Encoders.STRING).toDF().repartition(1).write.parquet(dataPath)
     }
 
-    private case class Data(trainRddSpectrumEmbedding: RDD[mutable.HashMap[Long,mutable.HashMap[String, Long]]])
+    private case class Data(trainRddSpectrumEmbedding: RDD[String])
   }
 
   private class PSpectrumModelReader extends MLReader[PSpectrumModel] {
@@ -255,25 +269,25 @@ private[pspectrum] object PSpectrumModel extends MLReadable[PSpectrumModel] {
     private val className = classOf[PSpectrumModel].getName
 
     override def load(path: String): PSpectrumModel = {
+
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
       val dataPath = new Path(path, "data").toString
 
-      // We support loading old `PSpectrumModel` saved by previous Spark versions.
-      // Previous model has `labels`, but new model has `labelsArray`.
-      val (majorVersion, minorVersion) = majorMinorVersion(metadata.sparkVersion)
-      val trainRddSpectrumEmbedding = if (majorVersion < 3) {
-        // Spark 2.4 and before.
-        val data = sparkSession.read.parquet(dataPath)
-          .select("train")
-        //.head()
-        data.rdd.map(r => r.getAs[mutable.HashMap[Long,mutable.HashMap[String, Long]]](0))
-      } else {
-        // After Spark 3.0.
-        val data = sparkSession.read.parquet(dataPath)
-          .select("trainRddSpectrumEmbedding")
-        data.rdd.map(r => r.getAs[mutable.HashMap[Long,mutable.HashMap[String, Long]]](0))
-      }
-      val model = new PSpectrumModel(metadata.uid, trainRddSpectrumEmbedding)
+      val data = sparkSession.read.parquet(dataPath).rdd.map(row => {
+
+
+        val  parsedMap = row.getString(0).parseJson.convertTo[Map[String,String]]
+        val originalMap = new mutable.HashMap[Long, mutable.HashMap[String, Long]]()
+        parsedMap.keySet.foreach(key => {
+          originalMap.put(key.toLong, new mutable.HashMap[String, Long] ++ parsedMap.get(key).get.parseJson.convertTo[Map[String,Long]])
+        })
+
+        originalMap
+
+      })
+
+      val model = new PSpectrumModel(metadata.uid, data)
+
       metadata.getAndSetParams(model)
       model
     }

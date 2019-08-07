@@ -1,8 +1,7 @@
 package org.apache.spark.ml.param
 
-
-import org.json4s.DefaultFormats
-import org.json4s.jackson.JsonMethods.{compact, parse, render}
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.collection.mutable
 
@@ -17,12 +16,11 @@ class HashMapParam(parent: Params, name: String, doc: String, isValid: mutable.H
       w(value)
 
   override def jsonEncode(value: mutable.HashMap[String, String]): String = {
-    import org.json4s.JsonDSL._
-    compact(render(value.toSeq))
+    value.toMap.toJson.toString()
+
   }
 
   override def jsonDecode(json: String): mutable.HashMap[String, String] = {
-    implicit val formats = DefaultFormats
-    parse(json).extract[mutable.HashMap[String, String]]
+    new mutable.HashMap[String, String] ++ json.parseJson.convertTo[Map[String, String]]
   }
 }
