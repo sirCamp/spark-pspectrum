@@ -1,7 +1,29 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.1.0'
+    }
+}
+
 plugins {
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
     id 'java'
     id 'scala'
+    id 'java-library'
     id 'maven-publish'
+
+}
+
+shadowJar {
+    zip64 true
+    mergeServiceFiles()
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allJava
 }
 
 group 'com.sircamp'
@@ -27,6 +49,10 @@ configurations {
     shadowCompile // Configuration for things that should be included in the shadow jar.
 }
 
+jar {
+    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
 dependencies {
 
     compile 'org.scala-lang:scala-library:2.11.12'
@@ -34,8 +60,7 @@ dependencies {
     compile "org.apache.spark:spark-core_${scalaBinaryVersion}:${sparkVersion}"
     compile "org.apache.spark:spark-mllib_${scalaBinaryVersion}:${sparkVersion}"
     compile "io.spray:spray-json_${scalaBinaryVersion}:1.3.5"
-    // https://mvnrepository.com/artifact/io.spray/spray-json
-    //compile group: 'io.spray', name: 'spray-json_2.13', version: '1.3.5'
+    //compile "org.spark-packages:sbt-spark-package:0.2.6"
 
     testCompile "junit:junit:4.12"
     testCompile "org.scalatest:scalatest_${scalaBinaryVersion}:3.0.0"
@@ -46,9 +71,14 @@ dependencies {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            from components.java
+
+            artifact sourcesJar
+        }
+        mavenJava(MavenPublication) {
             pom {
                 name = 'Spark PSpectrum'
-                description = 'Characheter embedding with p-spectrum kernels in Spark'
+                description = 'Character embedding with p-spectrum kernels and sequence relaxation for Apache Spark'
                 url = 'https://github.com/sirCamp/spark-pspectrum'
 
                 licenses {
