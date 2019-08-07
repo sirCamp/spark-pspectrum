@@ -1,4 +1,7 @@
 # Spark-pspectrum
+
+[![Build Status](https://travis-ci.com/sirCamp/spark-pspectrum.svg?branch=master)](https://travis-ci.com/sirCamp/spark-pspectrum)
+
 This repository represents a package that contains the PSpectrum computation for character embedding implemented in Spark. 
 Furthermore, the repository contains an implementation of a String relaxation in Spark. 
 In oder words, this is an useful big data implementation of PSpectrum kernel encoding and String relaxation.
