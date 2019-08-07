@@ -160,7 +160,6 @@ class SequenceRelaxationSuite extends FunSuite with BeforeAndAfterAll with Match
 
     var sr: SequenceRelaxation = new SequenceRelaxation()
 
-
     val rowList = new ListBuffer[Row]()
     rowList += RowFactory.create("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     rowList += RowFactory.create("abcdefghijklmnopqrstuvwxyz")

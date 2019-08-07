@@ -11,7 +11,7 @@ import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.monotonicallyIncreasingId
+import org.apache.spark.sql.functions.monotonically_increasing_id
 import org.apache.spark.sql.types.{DataTypes, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, RowFactory}
 import org.apache.spark.storage.StorageLevel
@@ -73,12 +73,12 @@ private[pspectrum] object PSpectrum {
 
     val document = row.getString(1)
     val id = row.getLong(0)
-    val end = document.length - p
+    val end = document.length - p +1
     val start = 0
     val step = 1
     val dictionary = new mutable.HashMap[String, Long]
 
-    for(i <- start to end){
+    for(i <- start until end){
       val key = document.substring(i, i + p)
       dictionary.put(key, 1L + dictionary.getOrElse(key, 0L))
     }
@@ -160,7 +160,7 @@ class PSpectrum private[pspectrum](override val uid: String) extends Estimator[P
     val needUnpersist = dataset.storageLevel == StorageLevel.NONE
 
     var uniqueId = Identifiable.randomUID("id")
-    val indexedDataset = dataset.withColumn(uniqueId, monotonicallyIncreasingId)
+    val indexedDataset = dataset.withColumn(uniqueId, monotonically_increasing_id())
 
     val rddSpectrumEmbedding = PSpectrum.getSpectrumEmbedding(indexedDataset.select(uniqueId, $(inputCol)).rdd, getP)
 
@@ -196,7 +196,7 @@ class PSpectrumModel private[pspectrum] (
     transformSchema(dataset.schema, logging = true)
 
     val uniqueId = Identifiable.randomUID("id")
-    val indexedDataset = dataset.withColumn(uniqueId, monotonicallyIncreasingId)
+    val indexedDataset = dataset.withColumn(uniqueId, monotonically_increasing_id())
     val newSpectrumEmbedding = PSpectrum.getSpectrumEmbedding(indexedDataset.select(uniqueId,$(inputCol)).rdd, getP)
 
     val transformedKernelRDD = PSpectrum.computeKernelFromEmbedding(newSpectrumEmbedding, Some(trainRddSpectrumEmbedding))
