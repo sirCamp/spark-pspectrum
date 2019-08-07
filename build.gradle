@@ -50,6 +50,7 @@ configurations {
 }
 
 jar {
+    zip64 true
     from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
