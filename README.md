@@ -5,8 +5,8 @@
 [![Scala](https://img.shields.io/badge/scala-v2.11.12-blue)](https://img.shields.io/badge/scala-v2.11.12-blue)
 
 This repository represents a package that contains the PSpectrum computation for character embedding implemented for Apache Spark. 
-Furthermore, the repository contains an implementation of a String relaxation in Apache Spark. 
-In oder words, this is an useful big data implementation of PSpectrum kernel encoding and String relaxation.
+Furthermore, the repository contains an implementation of a String relaxation for Apache Spark. 
+In other words, this is an useful big data implementation of PSpectrum kernel encoding and String relaxation.
 
 
 
